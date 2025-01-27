@@ -34,6 +34,23 @@ func handlerQuest(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "Método não permitido", http.StatusMethodNotAllowed)
 }
 
+func handlerDeletQuest(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodDelete{
+		index := r.URL.Path[len("/quest/"):]
+		var idx int
+		_, err := fmt.Sscanf(index, "%d", &idx)
+		if err != nil || idx < 0 || idx >= len(quests) {
+			http.Error(w, "Index invalido ", http.StatusBadRequest)
+			return
+		}
+		quests  = append(quests[:idx],quests[idx+1:]...)
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, "Questão excluida com sucesso!")
+		return
+	}
+	http.Error(w, "Método não permitido", http.StatusMethodNotAllowed)
+}
+
 // Handler para listar todas as questões (rota: /quests)
 func handlerListQuest(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -49,6 +66,7 @@ func handlerListQuest(w http.ResponseWriter, r *http.Request) {
 func main() {
 	http.HandleFunc("/quest", handlerQuest)  // Rota para receber questões
 	http.HandleFunc("/quests", handlerListQuest) // Rota para listar questões
+	http.HandleFunc("/quest/", handlerDeletQuest)
 	fmt.Println("Servidor iniciado na porta 8080")
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
