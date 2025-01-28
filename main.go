@@ -62,12 +62,27 @@ func handlerListQuest(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func enableCORS(next http.Handler) http.Handler{
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request){
+		w.Header().Set("Acess-Control-Allow-Origin", "*")
+		w.Header().Set("Acess-Control-Allow-Methods", "POST, GET, DELETE, OPTIONS")
+		w.Header().Set("Acess-Control-Allow-Headers", "Content-Type")
+		if r.Method == http.MethodOptions{
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		next.ServeHTTP(w,r)
+	})
+}
+
 // Função principal para inicializar o servidor
 func main() {
 	fileserve := http.FileServer(http.Dir("./template"))
 	http.Handle("/", http.StripPrefix("/", fileserve))
 
-	http.HandleFunc("/quest", handlerQuest)  // Rota para receber questões
+	http.Handle("/convert", enableCORS(http.HandlerFunc(handlerQuest)))
+
+	//http.HandleFunc("/quest", handlerQuest)  // Rota para receber questões
 	http.HandleFunc("/quests", handlerListQuest) // Rota para listar questões
 	http.HandleFunc("/quest/", handlerDeletQuest)
 	fmt.Println("Servidor iniciado na porta 8080")
