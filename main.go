@@ -4,12 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
+	"strings"
 )
 
 // Estrutura para armazenar uma questão recebida
 type QuestResponse struct {
-	Name  string `json:"name"`  
-	Quest string `json:"quest"` 
+	Name  string `json:"name"`
+	Quest string `json:"quest"`
 }
 
 // Armazena todas as questões enviadas
@@ -34,18 +36,20 @@ func handlerQuest(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "Método não permitido", http.StatusMethodNotAllowed)
 }
 
-func handlerDeletQuest(w http.ResponseWriter, r *http.Request) {
-	if r.Method == http.MethodDelete{
-		index := r.URL.Path[len("/quest/"):]
-		var idx int
-		_, err := fmt.Sscanf(index, "%d", &idx)
+// Handler para excluir uma questão (rota: /quest/{index})
+func handlerDeleteQuest(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodDelete {
+		// Obtém o índice da URL
+		indexStr := strings.TrimPrefix(r.URL.Path, "/quest/")
+		idx, err := strconv.Atoi(indexStr)
 		if err != nil || idx < 0 || idx >= len(quests) {
-			http.Error(w, "Index invalido ", http.StatusBadRequest)
+			http.Error(w, "Índice inválido", http.StatusBadRequest)
 			return
 		}
-		quests  = append(quests[:idx],quests[idx+1:]...)
+		// Remove a questão pelo índice
+		quests = append(quests[:idx], quests[idx+1:]...)
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, "Questão excluida com sucesso!")
+		fmt.Fprintf(w, "Questão excluída com sucesso!")
 		return
 	}
 	http.Error(w, "Método não permitido", http.StatusMethodNotAllowed)
@@ -62,29 +66,31 @@ func handlerListQuest(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func enableCORS(next http.Handler) http.Handler{
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request){
-		w.Header().Set("Acess-Control-Allow-Origin", "*")
-		w.Header().Set("Acess-Control-Allow-Methods", "POST, GET, DELETE, OPTIONS")
-		w.Header().Set("Acess-Control-Allow-Headers", "Content-Type")
-		if r.Method == http.MethodOptions{
+// Middleware para configurar CORS
+func enableCORS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusOK)
 			return
 		}
-		next.ServeHTTP(w,r)
+		next.ServeHTTP(w, r)
 	})
 }
 
 // Função principal para inicializar o servidor
 func main() {
+	// Configuração para servir arquivos estáticos
 	fileserve := http.FileServer(http.Dir("./template"))
 	http.Handle("/", http.StripPrefix("/", fileserve))
 
-	http.Handle("/convert", enableCORS(http.HandlerFunc(handlerQuest)))
+	// Rotas da API com middleware de CORS
+	http.Handle("/quest", enableCORS(http.HandlerFunc(handlerQuest)))         // Adicionar questões
+	http.Handle("/quests", enableCORS(http.HandlerFunc(handlerListQuest)))    // Listar questões
+	http.Handle("/quest/", enableCORS(http.HandlerFunc(handlerDeleteQuest))) // Excluir questões
 
-	//http.HandleFunc("/quest", handlerQuest)  // Rota para receber questões
-	http.HandleFunc("/quests", handlerListQuest) // Rota para listar questões
-	http.HandleFunc("/quest/", handlerDeletQuest)
 	fmt.Println("Servidor iniciado na porta 8080")
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
