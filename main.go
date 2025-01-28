@@ -64,6 +64,9 @@ func handlerListQuest(w http.ResponseWriter, r *http.Request) {
 
 // Função principal para inicializar o servidor
 func main() {
+	fileserve := http.FileServer(http.Dir("./template"))
+	http.Handle("/", http.StripPrefix("/", fileserve))
+
 	http.HandleFunc("/quest", handlerQuest)  // Rota para receber questões
 	http.HandleFunc("/quests", handlerListQuest) // Rota para listar questões
 	http.HandleFunc("/quest/", handlerDeletQuest)
