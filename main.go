@@ -87,9 +87,9 @@ func main() {
 	http.Handle("/", http.StripPrefix("/", fileserve))
 
 	// Rotas da API com middleware de CORS
-	http.Handle("/quest", enableCORS(http.HandlerFunc(handlerQuest)))         // Adicionar questões
-	http.Handle("/quests", enableCORS(http.HandlerFunc(handlerListQuest)))    // Listar questões
-	http.Handle("/quest/", enableCORS(http.HandlerFunc(handlerDeleteQuest))) // Excluir questões
+	http.Handle("/quest", enableCORS(http.HandlerFunc(handlerQuest)))         
+	http.Handle("/quests", enableCORS(http.HandlerFunc(handlerListQuest)))    
+	http.Handle("/quest/", enableCORS(http.HandlerFunc(handlerDeleteQuest))) 
 
 	fmt.Println("Servidor iniciado na porta 8080")
 	err := http.ListenAndServe(":8080", nil)
